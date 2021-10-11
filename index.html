@@ -1,0 +1,210 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.2.0/dist/aframe-environment-component.min.js"></script>
+  </head>
+  <style>
+    #score{
+      font-size:5em;
+    }
+  </style>
+  <body>
+    <a-scene>
+        <a-assets>
+            <!--Mole Model-->
+            <a-asset-item id="mole-model" src="../models/mole-model.glb"></a-asset-item>
+
+             <!--Hammer Model-->
+            <a-asset-item id="hammer-model" src="../models/hammer-model.glb"></a-asset-item>
+
+            <!--Mixins-->
+            <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
+            <a-mixin id="hammer" rotation="0 0 0" gltf-model="#hammer-model"></a-mixin>
+            <a-mixin id ="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>
+            <a-mixin id ="hammer-animation" animation="property: rotation; to: 0 0 180 ; dur: 100; easing:	linear; loop:1; dir: alternate"></a-mixin>
+            <a-mixin id="leg" geometry="primitive:box; width:0.1; depth:0.1" material="color:black"></a-mixin>
+        </a-assets>
+        <a-entity camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true">
+            <!--<a-entity hammer-logic position="1 0 -1" scale="0.5 0.5 0.5" rotation="0 -75 0" mixin="hammer"></a-entity> -->
+            <a-entity hammer-logic id="cursor-entity" cursor="fuse: true; fuseTimeout: 500"
+            position="0 0 -1"
+            animation__click="property: rotation; startEvents: click; easing: easeInCubic; dur: 50; from: -45 0 0; to: 0 0 0"
+            animation__fusing="property: rotation; startEvents: fusing; easing: easeInCubic; dur: 1500; from: 0 0 0; to:-45 0 0"
+            animation__mouseleave="property: rotation; startEvents: mouseleave; easing: easeInCubic; dur: 100; to: 0 0 0"
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+            material="color: black; shader: flat"
+            scale="0.1 0.1 0.1"
+            mixin="hammer"
+            raycaster="objects: .clickable">
+        </a-entity>
+        
+
+        </a-entity>
+        <a-entity>
+          <a-entity mixin="leg" position="-1 0 -4"></a-entity>
+          <a-entity mixin="leg" position="1 0 -4"></a-entity>
+          <a-box depth="0.1" height="1" width="2.5" position="0 1 -4">
+            <a-entity id ="score" scale="10 10 10" position="0 0 0.15" text="value: 0 whacks!; align:center;"></a-entity>
+          </a-box>
+        </a-entity>
+        <a-entity environment="  preset: forest;" id='stage' mole-land position="0 0 -2">
+
+        </a-entity>
+    </a-scene>
+  </body>
+  <script>
+    // Or inline before the <a-scene>.
+    AFRAME.registerComponent('mole-land', {
+      schema: {
+        size: {type: 'string', default: 'medium'},
+        current: {type:'int', default: 0},
+        targets: {type:'int', default: 4},
+        entities: {type:'array', default:[]}
+      },
+
+      init: function () {
+        const sizes ={'small':{'planeSize': 0.5, 'moles': 2}, 'medium': {'planeSize': 1, 'moles': 3}, 'large': {'planeSize': 1.5, 'moles': 4}}
+        setupGameArea(sizes[this.data.size], this.el);
+        this.data.entities = Array.from(document.querySelectorAll('.mole'));
+        var data = this.data;
+        this.timer=500;
+        this.el.addEventListener('add', (evt)=>{
+          this.data.entities.push(evt.detail.entity)
+          this.data.current-=1;
+        })
+      },
+      tick: function(time, deltaTime){
+        if(this.data.current<this.data.targets && this.data.entities.length>0){
+          if(this.timer>=1000){
+            this.data.entities = shuffle(this.data.entities);
+            const mole = this.data.entities.pop()
+            mole.emit('visible')
+            this.timer=0;
+            this.data.current+=1;
+          }
+        }
+        this.timer+=deltaTime;
+      }
+    })
+
+    function setupGameArea(sizes, parent){
+       
+
+        const holes = [];
+        let i_ = -1;
+        var counter = 1;
+        for(let i = 1; i <=sizes.moles; i++){
+          let j_ = -1;
+          for(let j = 1; j <=sizes.moles; j++){
+            const hole = document.createElement('a-cylinder');
+            hole.setAttribute('position', `${1 * j_}, 0, ${1 * i_}}`)
+            hole.setAttribute('radius', '0.3');
+            hole.setAttribute('height', '0.01');
+            hole.setAttribute('material', 'color:#b2865d; shader:flat');
+
+            const mole =  document.createElement('a-entity');
+            mole.setAttribute('id', counter++)
+            mole.setAttribute('mixin', 'mole');
+            mole.setAttribute('position', '0, -0.34, 0')
+            mole.setAttribute('mole-logic','')
+            mole.className="mole"
+            j_+=1
+            hole.appendChild(mole)
+            parent.appendChild(hole)
+          }
+          i_+=1
+        }
+      }
+    
+    AFRAME.registerComponent('hammer-logic', {
+      init: function () {
+        let score = 0;
+        this.timer=0;
+        this.active = false;
+        document.getElementById("cursor-entity").addEventListener('click',  (evt)=> {
+          console.log(evt.detail.intersectedEl)
+          this.timer=0;
+          score+=1
+          document.getElementById('score').setAttribute('text',{value: `${score} whacks!`})
+        });
+    },
+    tick: function(time, deltaTime){
+      this.timer+=deltaTime;
+      if(this.active==true && this.timer>=1000){
+        this.active=false;
+        this.el.setAttribute('mixin', 'hammer')
+      }
+    }
+  })
+
+    AFRAME.registerComponent('mole-logic', {
+      schema: {
+        visible: {type: 'boolean', default: false}
+      },
+      init: function () {
+        
+        var el = this.el
+        var data = this.data
+        this.hit = false;
+        el.addEventListener('click',  (evt)=> {
+          el.setAttribute("mixin", "mole")
+          el.setAttribute("position", "0 -0.34 0")
+          el.className = "mole"
+          this.timer = 0;
+          this.hit=true;
+        });
+        this.timer = 0;
+        el.addEventListener('visible', (evt)=>{
+          data.visible = true
+          el.setAttribute("mixin", "mole mole-animation")
+          el.className = "mole clickable"
+          this.timer = 0;
+        });
+        
+      },
+      update: function(){
+        if(this.data.visible == true){
+          el.setAttribute("position", "0  0 0")
+          this.timer = 0;
+        }
+      },
+      tick: function(time, deltaTime){
+        if(this.data.visible == true && this.timer>6000){
+            this.timer=0;
+            this.data.visible = false;
+            this.el.setAttribute("mixin", "mole")
+            this.el.className = "mole"
+            document.getElementById('stage').emit('add', {'entity':this.el})
+        }
+        if(this.hit==true && this.timer>2000 ){
+          document.getElementById('stage').emit('add', {'entity':this.el})
+          this.el.className = "mole"
+          this.hit=false;
+        }
+       this.timer+=deltaTime;
+      }
+    })
+
+    const getRandomNumber = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+  </script>
+</html>
