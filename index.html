@@ -2,38 +2,33 @@
   <head>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.2.0/dist/aframe-environment-component.min.js"></script>
+    <script src="mole_acre.js"></script>
   </head>
-  <style>
-    #score{
-      font-size:5em;
-    }
-  </style>
   <body>
     <a-scene>
         <a-assets>
-            <!--Mole Model-->
+            <!--Models-->
             <a-asset-item id="mole-model" src="../models/mole-model.glb"></a-asset-item>
-
-             <!--Hammer Model-->
-            <a-asset-item id="hammer-model" src="../models/hammer-model.glb"></a-asset-item>
+            <a-asset-item id="hammer-model" src="../models/hammer.glb"></a-asset-item>
 
             <!--Mixins-->
             <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
             <a-mixin id="hammer" rotation="0 0 0" gltf-model="#hammer-model"></a-mixin>
-            <a-mixin id="hit-mole-transformation" rotation="30 0 0"></a-mixin>
+
             <a-mixin id="final-score-animation" animation="property: scale; to: 2 2 2; dur: 500;"></a-mixin>
-            <a-mixin id ="control-countdown-animation" animation__timeup="property: position; to: 0 -0.24 0; dur: 11000;"></a-mixin>
-            <a-mixin id ="control-allowRestart-animation" animation__start="property: position; to: 0 0 0; dur: 500;"></a-mixin>
-            <a-mixin id ="hole-end-animation" animation="property: geometry.radius; to: 0.05; dur: 500; easing:	easeOutQuart;"></a-mixin>
-            <a-mixin id ="hole-start-animation" animation="property: geometry.radius; to: 0.3; dur: 500; easing:	easeOutQuart;"></a-mixin>
-            <a-mixin id ="play-animation" animation="property: scale; to: 0.9 0.9 0.9; dur: 1000; easing:	easeInOutSine; loop:true; dir: alternate"></a-mixin>
-            <a-mixin id ="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>
-            <a-mixin id ="hammer-animation" animation="property: rotation; to: 0 0 180 ; dur: 100; easing:	linear; loop:1; dir: alternate"></a-mixin>
+
+            <a-mixin id="control-allowRestart-animation" animation__restart="property: position; to: 0 0 0; dur: 500;"></a-mixin>
+            <a-mixin id="hole-end-animation" animation="property: geometry.radius; to: 0.05; dur: 500; easing:	easeOutQuart;"></a-mixin>
+            <a-mixin id="hole-start-animation" animation="property: geometry.radius; to: 0.3; dur: 500; easing:	easeOutQuart;"></a-mixin>
+
+            <a-mixin id="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>
+
             <a-mixin id="leg" geometry="primitive:box; width:0.1; depth:0.1" material="color:black"></a-mixin>
         </a-assets>
-        <a-entity camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true">
-            <!--<a-entity hammer-logic position="1 0 -1" scale="0.5 0.5 0.5" rotation="0 -75 0" mixin="hammer"></a-entity> -->
-            <a-entity hammer-logic id="cursor-entity" cursor="fuse: true; fuseTimeout: 500"
+
+
+        <a-entity camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true"> 
+          <a-entity hammer-logic id="cursor-entity" cursor="fuse: true; fuseTimeout: 500"
             position="0 0 -1"
             animation__click="property: rotation; startEvents: click; easing: easeInCubic; dur: 250; from: -45 0 0; to: 0 0 0"
             animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 500; from: 0.1 0.1 0.1; to:0.15 0.15 0.15"
@@ -43,10 +38,9 @@
             scale="0.1 0.1 0.1"
             mixin="hammer"
             raycaster="objects: .clickable">
+          </a-entity>
         </a-entity>
-        
 
-        </a-entity>
         <a-entity>
           <a-entity mixin="leg" position="-1 0 -4"></a-entity>
           <a-entity mixin="leg" position="1 0 -4"></a-entity>
@@ -54,190 +48,14 @@
             <a-entity scale="8 8 8" position="0 0  0.15" text="value: Mole Acre; align:center;"></a-entity>
           </a-box>
         </a-entity>
+
         <a-entity environment="preset: forest;" id='stage' mole-acre position="0 0 -2.2">
-          <a-entity control id="control-entity" geometry="primitive:box; height:0.5; width:0.6; depth:0.6" class="clickable" position="0 0 0" material="color:#9c6644">
-            <a-entity id ="control-score" scale="2 2 2"  rotation="-90 0 0" position="0 0.25 -0.10" text="value:; align:center;"></a-entity>
-            <a-entity id ="control-instruction" scale="2 2 2"  rotation="-90 0 0" position="0 0.25 0.10" text="value: Hit to Play!; align:center;"></a-entity>
+          <a-entity control="gameDuration:5000; gameDifficulty:3" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:0.6" class="clickable" position="0 0 0" material="color:#9c6644">
+            <a-entity id ="control-score" scale="4 4 4"  rotation="-90 0 0" position="0 0.25 -0.15" text="value:; align:center;"></a-entity>
+            <a-entity id ="control-instruction" scale="3.5 3.5 3.5"  rotation="-90 0 0" position="0 0.25 0.15" text="value: Hit to Play!; align:center;"></a-entity>
           </a-entity>
         </a-entity>
+
     </a-scene>
   </body>
-  <script>
-    AFRAME.registerComponent('control', {
-      schema: {
-        difficulty: {type:'int', default: 1}
-      },
-      init: function(){
-        this.score=0;
-        document.getElementById("control-score").setAttribute("text",`value: Hits: ${this.score}`)
-        this.el.addEventListener("addScore",()=>{
-          this.score+=1;
-          document.getElementById("control-score").setAttribute("text",`value: Hits: ${this.score}`)
-        })
-        this.el.addEventListener('click',()=>{
-          this.el.className=""
-          this.score=0;
-          document.getElementById("control-score").setAttribute("text",`value: Hits: ${this.score}`)
-          document.getElementById("control-instruction").setAttribute("text","value:")
-          document.getElementById("stage").emit("start")
-          this.el.setAttribute("mixin","control-countdown-animation")
-
-          //timer runs out so game should end an be restartable
-          this.el.addEventListener("animationcomplete", (evt)=>{
-            if(evt.detail.name=="animation__timeup"){
-              document.getElementById("stage").emit("timeup")
-              setTimeout(()=>this.allowRestart(this.el), 3000)
-              document.getElementById("cursor-entity").setAttribute("cursor", "fuse: false;")
-              console.log(document.getElementById("cursor-entity"))
-              console.log("Yes")
-            }
-          })
-        })
-      },
-      allowRestart: function() {
-        this.el.setAttribute("mixin","control-allowRestart-animation")
-        this.el.addEventListener("animationcomplete",(evt)=>{
-          if(evt.detail.name=="animation__start"){
-            this.el.className="clickable"          
-            document.getElementById("control-instruction").setAttribute("text","value:Hit to Replay")
-            document.getElementById("cursor-entity").setAttribute("cursor", "fuse: true")
-          }
-        })
-      }
-    })
-
-
-    AFRAME.registerComponent('mole-acre', {
-      schema: {
-        difficulty: {type:'int', default: 1}
-      },
-
-      init: function () {
-        this.entities = []
-        this.timeup = false;
-        setupGameArea(3, this.el);
-        this.entities = Array.from(document.querySelectorAll('.mole'));
-        this.el.addEventListener('add', (evt)=>{
-          this.entities.push(evt.detail.entity)
-          if(!this.timeup){
-            this.popMole()
-          }
-          else{
-            Array.from(document.querySelectorAll('.hole')).forEach(element => {
-              element.setAttribute("mixin", "hole-end-animation")
-            });
-          }
-        })
-
-        this.el.addEventListener("timeup", ()=>{
-          this.timeup = true;
-        })
-        this.el.addEventListener("start", ()=>{
-          console.log('Started')
-          this.timeup=false;
-          Array.from(document.querySelectorAll('.hole')).forEach(element => {
-              element.setAttribute("mixin", "hole-start-animation")
-            });
-          this.popMole()
-        })
-      },
-
-      popMole: function(){
-        this.entities = shuffle(this.entities);
-        const mole = this.entities.pop()
-        mole.emit('visible')
-      },
-      tick: function(){
-      }
-    })
-
-    function setupGameArea(sizes, parent){
-        const holes = [];
-        let i_ = -1;
-        var counter = 1;
-        for(let i = 1; i <=sizes; i++){
-          let j_ = -1;
-          for(let j = 1; j <=sizes; j++){
-            counter+=1;
-            if(counter!=6){
-              const hole = document.createElement('a-cylinder');
-              hole.setAttribute('position', `${1 * j_}, 0, ${1 * i_}}`)
-              hole.setAttribute('radius', '0.05');
-              hole.setAttribute('height', '0.01');
-              hole.setAttribute('material', 'color:#b2865d; shader:flat');
-              hole.className="hole"
-         
-              const mole =  document.createElement('a-entity');
-              mole.setAttribute('id', counter)
-              mole.setAttribute('mixin', 'mole');
-              mole.setAttribute('position', '0, -0.34, 0')
-              mole.setAttribute('mole-logic','')
-              mole.className="mole"
-              hole.appendChild(mole)
-              parent.appendChild(hole)
-            }  
-            j_+=1 
-          }
-          i_+=1
-        }
-      }
-    
-  
-
-    AFRAME.registerComponent('mole-logic', {
-      schema: {
-        visible: {type: 'boolean', default: false}
-      },
-      init: function () {
-        
-        var el = this.el
-        var data = this.data
-        this.hit = false;
-        el.addEventListener('click',  (evt)=> {
-          document.getElementById("control-entity").emit("addScore")
-          el.setAttribute("mixin", "mole mole-animation")
-          el.setAttribute("rotation", "15, 0 0")
-          el.className = "mole"
-          this.timer = 0;
-          this.hit=true;
-        });
-        this.timer = 0;
-        el.addEventListener('visible', (evt)=>{
-          data.visible = true
-          el.setAttribute("mixin", "mole mole-animation")
-          el.className = "mole clickable"
-          el.setAttribute("rotation", "0, 0 0")
-        });
-
-        el.addEventListener('animationcomplete', (evt)=>{
-          el.setAttribute("mixin", "mole")
-          evt.target.className="mole"
-          document.getElementById('stage').emit('add', {'entity':evt.target})
-        })
-        
-      }
-    })
-
-    const getRandomNumber = (min, max) => {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    };
-
-    function shuffle(array) {
-  let currentIndex = array.length,  randomIndex;
-
-  // While there remain elements to shuffle...
-  while (currentIndex != 0) {
-
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
-  }
-
-  return array;
-}
-  </script>
 </html>
