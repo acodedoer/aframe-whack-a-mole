@@ -1,6 +1,6 @@
 # Project Title
 
-Mole Acre - A VR whack-a-moler game
+Mole Acre - A VR whack-a-mole game
 
 ## Description
 
@@ -17,6 +17,5 @@ You can [try out the game by following this link](https://acodedoer.github.io/af
    git clone https://github.com/acodedoer/aframe-whack-a-mole.git
    ```
 2. Configure the game
-   ```sh
    You can set the duration of the game using the string gameDuration property of the control component (a "short" game lasts 30 seconds, while "long" game lasts 45 seconds). You can also adjust the game difficulty using the boolean popMultiple property of the control component (true displays multiple moles at a time while false displays a single mole at a time)
-   ```
+   
