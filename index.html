@@ -3,7 +3,7 @@
   <head>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.2.0/dist/aframe-environment-component.min.js"></script>
-    <script src="mole_acre.js"></script>
+    <script src="https://acodedoer.github.io/aframe-whack-a-mole/mole_acre.js"></script>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
     <a-scene>
         <a-assets>
             <!--Models-->
-            <a-asset-item id="mole-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/mole-model.glb"></a-asset-item>
+            <a-asset-item id="mole-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/mole.glb"></a-asset-item>
             <a-asset-item id="hammer-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/hammer.glb"></a-asset-item>
 
             <!--Sound-->
@@ -23,15 +23,18 @@
             <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
             <a-mixin id="hammer" rotation="0 0 0" gltf-model="#hammer-model"></a-mixin>
 
-            <a-mixin id="final-score-animation" animation="property: scale; to: 2 2 2; dur: 500;"></a-mixin>
-
+            <a-mixin id="control-countdown-animation" animation__countdown="property: position; to: 0 -0.24 0; dur:250;"></a-mixin>
             <a-mixin id="control-allowRestart-animation" animation__restart="property: position; to: 0 0 0; dur: 500;"></a-mixin>
-            <a-mixin id="hole-end-animation" animation="property: geometry.radius; to: 0.05; dur: 500; easing:	easeOutQuart;"></a-mixin>
+            
+            <a-mixin id="hole-end-animation" animation="property: geometry.radius; to: 0.15; dur: 500; easing:	easeOutQuart;"></a-mixin>
             <a-mixin id="hole-start-animation" animation="property: geometry.radius; to: 0.3; dur: 500; easing:	easeOutQuart;"></a-mixin>
+            
+            <a-mixin id="control-horizontal-bar" material="color:#b2865d;" geometry="primitive:box; width:1; depth: 0.05; height: 0.05"></a-mixin> 
+            <a-mixin id="control-vertical-bar" material="color:#b2865d" geometry="primitive:box; width:0.05; depth: 1; height: 0.05"></a-mixin> 
 
             <a-mixin id="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>
 
-            <a-mixin id="leg" geometry="primitive:box; width:0.1; depth:0.1" material="color:black"></a-mixin>
+            <a-mixin id="billboard-leg" geometry="primitive:box; width:0.1; depth:0.1" material="color:#9c6644"></a-mixin>
         </a-assets>
 
 
@@ -52,17 +55,23 @@
         </a-entity>
 
         <a-entity>
-          <a-entity mixin="leg" position="-1 0 -4"></a-entity>
-          <a-entity mixin="leg" position="1 0 -4"></a-entity>
+          <a-entity mixin="billboard-leg" position="-1 0 -4"></a-entity>
+          <a-entity mixin="billboard-leg" position="1 0 -4"></a-entity>
           <a-box depth="0.1" height="1" width="3" position="0 1 -4">
-            <a-entity scale="8 8 8" position="0 0  0.15" text="value: Mole Acre; align:center;"></a-entity>
+            <a-entity scale="8 8 8" position="0 0.25  0.15" text="value: Mole Acre; align:center;"></a-entity>
+            <a-entity id="highscore-text" scale="4 4 4" position="0 -0.25  0.15" text="value: Highscore: 0; align:center;"></a-entity>
           </a-box>
         </a-entity>
 
         <a-entity environment="preset: forest;" id='stage' mole-acre position="0 0 -2.2">
-          <a-entity control="gameDuration:30000; popMultiple: true" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:0.6" class="clickable" position="0 0 0" material="color:#9c6644">
-            <a-entity id ="control-score" scale="4 4 4"  rotation="-90 0 0" position="0 0.25 -0.15" text="value:; align:center;"></a-entity>
-            <a-entity id ="control-instruction" scale="3.5 3.5 3.5"  rotation="-90 0 0" position="0 0.25 0.15" text="value: Hit to Play!; align:center;"></a-entity>
+          <a-entity control="gameDuration: short; popMultiple: true" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:1" class="clickable" position="0 0 0" material="color:#9c6644">
+            <a-entity id ="control-score" scale="4 4 4"  rotation="-90 0 0" position="0 0.25 -0.25" text="value:; align:center;"></a-entity>
+            <a-entity id ="control-instruction" scale="3.5 3.5 3.5"  rotation="-90 0 0" position="0 0.25 0.25" text="value: Hit to Play!; align:center;"></a-entity>
+            <a-entity mixin="control-vertical-bar" position="0.475 0.25 0"></a-entity>
+            <a-entity mixin="control-vertical-bar" position="-0.475 0.25 0"></a-entity>
+            <a-entity mixin="control-horizontal-bar" position="0 0.25 0.475" ></a-entity>
+            <a-entity mixin="control-horizontal-bar" position="0 0.25 -0.475"></a-entity>
+            <a-entity mixin="control-horizontal-bar" position="0 0.25 0"></a-entity>
           </a-entity>
         </a-entity>
 

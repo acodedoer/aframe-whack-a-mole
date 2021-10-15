@@ -1,49 +1,70 @@
 AFRAME.registerComponent('control', {
     schema: {
-        gameDuration:{type: 'int', default: 30000},
+        gameDuration:{type: 'string', default: "short"},
         popMultiple:{type: 'boolean', default:false}
     },
 
     init: function(){
+        this.durations= {"short": 30, "long": 45}
+        this.duration = this.durations[this.data.gameDuration]
         this.scoreText = document.getElementById("control-score");
         this.stage = document.getElementById("stage");
         this.controlInstructions = document.getElementById("control-instruction");
         this.cursor = document.getElementById("cursor-entity");
+        this.highscoreText = document.getElementById("highscore-text");
 
-        //create countdown animation mixin, this determines the duration of the game
-        const controlTimer = document.createElement("a-mixin");
-        controlTimer.id = "control-countdown-animation";
-        controlTimer.setAttribute("animation__countdown", `property: position; to: 0 -0.24 0; dur: ${this.data.gameDuration}`)
-        document.querySelector('a-assets').appendChild(controlTimer);
+        //dipslay a score of 0 at the start of the game
+        this.score=0;
+        this.setScore();
+        this.displayHighscore();
 
-      //dipslay a score of 0 at the start of the game
-      this.score=0;
-      this.setScore();
-      
-      //listen for event called when mole is hit
-      this.el.addEventListener("addScore",()=>{
+        //listen for event called when mole is hit
+        this.el.addEventListener("addScore",()=>{
         this.score+=1;
         this.setScore()
       })
 
       //listen to when the controlbutton is clicked i.e to play or replay the game
-      this.el.addEventListener('click',()=>{
+    this.el.addEventListener('click',()=>{
         this.el.classList.remove("clickable");
         this.score=0;
         this.setScore();
-        this.controlInstructions.setAttribute("text","value", "");
         this.stage.emit("start", {'multiple':this.data.popMultiple});
         this.el.setAttribute("mixin","control-countdown-animation");
+        this.controlInstructions.setAttribute("text","value", `Time: ${this.duration}`);
 
-        //listen for when the timer runs out, the game should then end and be restartable
-        this.el.addEventListener("animationcomplete", (e)=>{
-          if(e.detail.name=="animation__countdown"){
-            this.stage.emit("timeup");
-            setTimeout(()=>this.allowRestart(this.el), 3500);
-            this.cursor.setAttribute("cursor", "fuse", "false");
-          }
-        });
+        //set the timer for the game and keep updating the timer text every second
+        this.timer = setInterval(()=>{
+            this.duration-=1;
+            this.controlInstructions.setAttribute("text","value", `Time: ${this.duration}`);
+            if(this.duration<=0){
+                this.stage.emit("timeup");
+                setTimeout(()=>this.allowRestart(this.el), 3500);
+                this.cursor.setAttribute("cursor", "fuse", "false");
+                clearInterval(this.timer);
+            }
+        }, 1000)
       });
+    },
+
+    //display highscore on billboard
+    displayHighscore: function(){
+        this.highscoreText.setAttribute("text", "value", `Highscore: ${this.getHighscore()}`);
+    },
+
+    //return highscore from local storage or 0 if non is stored
+    getHighscore: function(){
+        const highscore = localStorage.getItem('moleacre');
+        if (highscore==null) return 0;
+        else return parseInt(highscore);
+    },
+
+    //store score in local storage if it is greater than highscore
+    setHighscore: function(){
+        const highscore = this.getHighscore();
+        if(this.score>highscore){
+            localStorage.setItem("moleacre", this.score);
+        }
     },
     
     //display current score on the control button
@@ -53,14 +74,19 @@ AFRAME.registerComponent('control', {
 
     //reset timer and control
     allowRestart: function() {
-      this.el.setAttribute("mixin","control-allowRestart-animation"); //initialse the control entity's animation back to it initial position
-      this.el.addEventListener("animationcomplete",(e)=>{ //listen for when thee control entity has been animated back to it initial position
-        if(e.detail.name=="animation__restart"){
-          this.el.classList.add("clickable");      
-          this.controlInstructions.setAttribute("text","value", "Hit to Replay");
-          this.cursor.setAttribute("cursor", "fuse",  "true");
-        }
-      });
+        console.log("Allow Restart")
+        this.setHighscore();
+        this.displayHighscore();
+        this.duration=this.durations[this.data.gameDuration];
+        this.el.setAttribute("mixin","control-allowRestart-animation"); //initialse the control entity's animation back to it initial position
+        this.el.addEventListener("animationcomplete",(e)=>{ //listen for when thee control entity has been animated back to it initial position
+            if(e.detail.name=="animation__restart"){
+                console.log("Restart animation is complete")
+                this.el.classList.add("clickable");      
+                this.controlInstructions.setAttribute("text","value", "Hit to Replay");
+                this.cursor.setAttribute("cursor", "fuse",  "true");
+            }
+        });
     }
   });
 
@@ -131,7 +157,7 @@ AFRAME.registerComponent('control', {
             const hole = document.createElement('a-cylinder');
             hole.object3D.position.x = 1 * j_;
             hole.object3D.position.z = 1 * i_;
-            hole.setAttribute('radius', '0.05');
+            hole.setAttribute('radius', '0.15');
             hole.setAttribute('height', '0.01');
             hole.setAttribute('material', 'color:#b2865d; shader:flat');
             hole.className="hole"
