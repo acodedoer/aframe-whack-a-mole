@@ -1,7 +1,7 @@
 AFRAME.registerComponent('control', {
     schema: {
         gameDuration:{type: 'int', default: 30000},
-        gameDifficulty:{type: 'int', default:2}
+        popMultiple:{type: 'boolean', default:'false'}
     },
 
     init: function(){
@@ -32,7 +32,7 @@ AFRAME.registerComponent('control', {
         this.score=0;
         this.setScore();
         this.controlInstructions.setAttribute("text","value", "");
-        this.stage.emit("start", {'difficulty':this.data.gameDifficulty});
+        this.stage.emit("start", {'multiple':this.data.popMultiple});
         this.el.setAttribute("mixin","control-countdown-animation");
 
         //listen for when the timer runs out, the game should then end and be restartable
@@ -85,8 +85,9 @@ AFRAME.registerComponent('control', {
       this.el.addEventListener("start", (e)=>{
         this.timeup=false;
         this.setHoleAnimation("hole-start-animation");
-        for(let i = 0; i<e.detail.difficulty; i++){
-            setTimeout(()=>this.popRandomMole(), i*250)
+        this.popRandomMole();
+        if(e.detail.multiple==true){
+            setTimeout(()=>this.popRandomMole(), 750)
         }
       })
 

@@ -3,7 +3,7 @@
   <head>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.2.0/dist/aframe-environment-component.min.js"></script>
-    <script src="https://acodedoer.github.io/aframe-whack-a-mole/mole_acre.js"></script>
+    <script src="mole_acre.js"></script>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,9 @@
             <!--Models-->
             <a-asset-item id="mole-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/mole-model.glb"></a-asset-item>
             <a-asset-item id="hammer-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/hammer.glb"></a-asset-item>
+
+            <!--Sound-->
+            <audio id="hit-sound" src="https://acodedoer.github.io/aframe-whack-a-mole/sounds/impact.ogg" preload="auto"></audio>
 
             <!--Mixins-->
             <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
@@ -42,7 +45,9 @@
             material="color: black; shader: flat"
             scale="0.1 0.1 0.1"
             mixin="hammer"
-            raycaster="objects: .clickable">
+            raycaster="objects: .clickable"
+            sound="src: #hit-sound; on: click"
+            >
           </a-entity>
         </a-entity>
 
@@ -55,7 +60,7 @@
         </a-entity>
 
         <a-entity environment="preset: forest;" id='stage' mole-acre position="0 0 -2.2">
-          <a-entity control="gameDuration:30000; gameDifficulty:2" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:0.6" class="clickable" position="0 0 0" material="color:#9c6644">
+          <a-entity control="gameDuration:30000; popMultiple: false" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:0.6" class="clickable" position="0 0 0" material="color:#9c6644">
             <a-entity id ="control-score" scale="4 4 4"  rotation="-90 0 0" position="0 0.25 -0.15" text="value:; align:center;"></a-entity>
             <a-entity id ="control-instruction" scale="3.5 3.5 3.5"  rotation="-90 0 0" position="0 0.25 0.15" text="value: Hit to Play!; align:center;"></a-entity>
           </a-entity>
