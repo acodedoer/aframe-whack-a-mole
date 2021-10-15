@@ -74,14 +74,12 @@ AFRAME.registerComponent('control', {
 
     //reset timer and control
     allowRestart: function() {
-        console.log("Allow Restart")
         this.setHighscore();
         this.displayHighscore();
         this.duration=this.durations[this.data.gameDuration];
         this.el.setAttribute("mixin","control-allowRestart-animation"); //initialse the control entity's animation back to it initial position
         this.el.addEventListener("animationcomplete",(e)=>{ //listen for when thee control entity has been animated back to it initial position
             if(e.detail.name=="animation__restart"){
-                console.log("Restart animation is complete")
                 this.el.classList.add("clickable");      
                 this.controlInstructions.setAttribute("text","value", "Hit to Replay");
                 this.cursor.setAttribute("cursor", "fuse",  "true");
