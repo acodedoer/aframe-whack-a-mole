@@ -86,7 +86,7 @@ AFRAME.registerComponent('control', {
         this.timeup=false;
         this.setHoleAnimation("hole-start-animation");
         for(let i = 0; i<e.detail.difficulty; i++){
-            setTimeout(()=>this.popRandomMole(), i*500)
+            setTimeout(()=>this.popRandomMole(), i*250)
         }
       })
 
