@@ -1,6 +1,6 @@
-# Project Title
+# Mole Acre
 
-Mole Acre - A VR whack-a-mole game
+A VR whack-a-mole game.
 
 ## Description
 
