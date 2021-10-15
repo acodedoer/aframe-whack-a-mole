@@ -1,7 +1,7 @@
 AFRAME.registerComponent('control', {
     schema: {
         gameDuration:{type: 'int', default: 30000},
-        popMultiple:{type: 'boolean', default:'false'}
+        popMultiple:{type: 'boolean', default:false}
     },
 
     init: function(){
