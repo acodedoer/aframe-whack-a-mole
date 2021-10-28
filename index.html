@@ -23,6 +23,8 @@
             <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
             <a-mixin id="hammer" rotation="0 0 0" gltf-model="#hammer-model"></a-mixin>
 
+            <a-mixin id="controller-hammer" rotation="-90 0 0" scale="0.3 0.3 0.3" gltf-model="#hammer-model"></a-mixin>
+
             <a-mixin id="control-countdown-animation" animation__countdown="property: position; to: 0 -0.24 0; dur:250;"></a-mixin>
             <a-mixin id="control-allowRestart-animation" animation__restart="property: position; to: 0 0 0; dur: 500;"></a-mixin>
             
@@ -32,12 +34,9 @@
             <a-mixin id="control-horizontal-bar" material="color:#b2865d;" geometry="primitive:box; width:1; depth: 0.05; height: 0.05"></a-mixin> 
             <a-mixin id="control-vertical-bar" material="color:#b2865d" geometry="primitive:box; width:0.05; depth: 1; height: 0.05"></a-mixin> 
 
-            <a-mixin id="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>
-
-            <a-mixin id="billboard-leg" geometry="primitive:box; width:0.1; depth:0.1" material="color:#9c6644"></a-mixin>
+            <a-mixin id="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>        
         </a-assets>
-
-
+        
         <a-entity camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true"> 
           <a-entity hammer-logic id="cursor-entity" cursor="fuse: true; fuseTimeout: 500"
             position="0 0 -1"
@@ -51,9 +50,10 @@
             raycaster="objects: .clickable"
             sound="src: #hit-sound; on: click"
             >
-          </a-entity>
+          </a-entity> 
         </a-entity>
 
+        
         <a-entity>
           <a-entity mixin="billboard-leg" position="-1 0 -4"></a-entity>
           <a-entity mixin="billboard-leg" position="1 0 -4"></a-entity>
