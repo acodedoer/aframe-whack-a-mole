@@ -46,7 +46,6 @@ AFRAME.registerComponent('control', {
           document.getElementById("camera").appendChild(this.cursor)
         }
 
-
         //listen for event called when mole is hit
         this.el.addEventListener("addScore",()=>{
         this.score+=1;
@@ -56,8 +55,8 @@ AFRAME.registerComponent('control', {
       //listen to when the control button is clicked or collided with i.e to play or replay the game
       this.el.addEventListener(this.event,()=>{
         if(this.event=="click" || this.collidable){
-          console.log("inside")
         this.el.classList.remove("clickable");
+        this.collidable = false;
         this.score=0;
         this.setScore();
         this.stage.emit("start", {'multiple':this.data.popMultiple});
