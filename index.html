@@ -68,7 +68,7 @@
         <a-entity id="mole-acre-billboard">
           <a-entity mixin="billboard-leg" position="-1 0 -4"></a-entity>
           <a-entity mixin="billboard-leg" position="1 0 -4"></a-entity>
-          <a-box sound="src: #miss-sound; on: collidestart" ammo-body="type:static; collisionFilterGroup: 1; collisionFilterMask: 5;" ammo-shape="type:box;"depth="0.1" height="1" width="3" position="0 1 -4">
+          <a-box sound="src: #miss-sound; on: collidestart" ammo-body="type:static; emitCollisionEvents:true; collisionFilterGroup: 1; collisionFilterMask: 5;" ammo-shape="type:box;"depth="0.1" height="1" width="3" position="0 1 -4">
             <a-entity scale="8 8 8" position="0 0.25  0.15" text="value: Mole Acre; align:center;"></a-entity>
             <a-entity id="highscore-text" scale="4 4 4" position="0 -0.25  0.15" text="value: Highscore: 0; align:center;"></a-entity>
           </a-box>
@@ -116,6 +116,10 @@
         <!--Camera to attach curso if the player is not using the above-->
         <a-entity id="camera" camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true"> 
         </a-entity>
+
+        <!--Collidable floor-->
+        <a-plane sound="src: #miss-sound; on: collidestart" rotation ="-90 0 0" width="100" height="100" position="0 -0.1 0" ammo-body="type:static; emitCollisionEvents:true;collisionFilterGroup: 2; collisionFilterMask: 6;" ammo-shape="type:box;"></a-plane>
+        
     </a-scene>
   </body>
 </html>
