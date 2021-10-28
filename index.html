@@ -3,27 +3,43 @@
   <head>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.2.0/dist/aframe-environment-component.min.js"></script>
-    <script src="https://acodedoer.github.io/aframe-whack-a-mole/mole_acre.js"></script>
+    <script src="mole_acre.js"></script>
+    <script src="https://mixedreality.mozilla.org/ammo.js/builds/ammo.wasm.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script> 
+
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mole Acre</title>
   </head>
   <body>
-    <a-scene>
+    <a-scene id="scene" stats physics="driver: ammo; debug: true; debugDrawMode: 1;">
         <a-assets>
             <!--Models-->
-            <a-asset-item id="mole-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/mole-model.glb"></a-asset-item>
+            <a-asset-item id="mole-model" src="models/mole.glb"></a-asset-item>
             <a-asset-item id="hammer-model" src="https://acodedoer.github.io/aframe-whack-a-mole/models/hammer-model.glb"></a-asset-item>
+            <a-asset-item id="controller-hammer-model" src="models/hammer.glb"></a-asset-item>
 
             <!--Sound-->
+            <!--Sound-->
             <audio id="hit-sound" crossorigin="anonymous" src="https://acodedoer.github.io/aframe-whack-a-mole/sounds/impact.mp3" preload="auto"></audio>
+            <audio id="miss-sound" crossorigin="anonymous" src="sounds/miss.mp3" preload="auto"></audio> <!--from https://opengameart.org/content/collision-nutfall-yo-frankie-->
+            <audio id="shoot-sound" crossorigin="anonymous" src="sounds/hammerSound.mp3" preload="auto"></audio>
 
             <!--Mixins-->
-            <a-mixin id="mole" scale="0.3 0.3 0.3" gltf-model="#mole-model"></a-mixin>
+
+            <!--Mole-->
+            <a-mixin id="mole" sound="src: #hit-sound; on: collidestart" scale="0.3 0.3 0.3" gltf-model="#mole-model" ammo-body="type:kinematic;emitCollisionEvents: true;collisionFilterGroup: 1; collisionFilterMask: 5;" ammo-shape="type:capsule; fit:manual; halfExtents: 0.13 0.115 0.13"></a-mixin>
+            
+            <!--Cursor Hammer-->
             <a-mixin id="hammer" rotation="0 0 0" gltf-model="#hammer-model"></a-mixin>
 
-            <a-mixin id="controller-hammer" rotation="-90 0 0" scale="0.3 0.3 0.3" gltf-model="#hammer-model"></a-mixin>
+            <!--Controller hammer -->
+            <a-mixin id="controller-hammer"  gltf-model="#controller-hammer-model" sound="src: #shoot-sound; on: playHammerSound; volume:0.1"></a-mixin>
+            
+            <!--Flying hammer -->
+            <a-mixin id="flying-hammer"  ammo-body="type:kinematic;emitCollisionEvents:true" ammo-shape="type:box; fit:manual; halfExtents: 0.15 0.075 0.15"  gltf-model="#controller-hammer-model"></a-mixin>
+
 
             <a-mixin id="control-countdown-animation" animation__countdown="property: position; to: 0 -0.24 0; dur:250;"></a-mixin>
             <a-mixin id="control-allowRestart-animation" animation__restart="property: position; to: 0 0 0; dur: 500;"></a-mixin>
@@ -35,36 +51,32 @@
             <a-mixin id="control-vertical-bar" material="color:#b2865d" geometry="primitive:box; width:0.05; depth: 1; height: 0.05"></a-mixin> 
 
             <a-mixin id="mole-animation" animation="property: position; to: 0 0 0; dur: 1000; easing:	easeOutQuart; loop:1; dir: alternate"></a-mixin>        
-        </a-assets>
         
-        <a-entity camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true"> 
-          <a-entity hammer-logic id="cursor-entity" cursor="fuse: true; fuseTimeout: 500"
-            position="0 0 -1"
-            animation__click="property: rotation; startEvents: click; easing: easeInCubic; dur: 250; from: -45 0 0; to: 0 0 0"
-            animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 500; from: 0.1 0.1 0.1; to:0.15 0.15 0.15"
-            animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 250; to: 0.1 0.1 0.1"
-            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-            material="color: black; shader: flat"
-            scale="0.1 0.1 0.1"
-            mixin="hammer"
-            raycaster="objects: .clickable"
-            sound="src: #hit-sound; on: click"
-            >
-          </a-entity> 
-        </a-entity>
+            <a-mixin id="billboard-leg" sound="src: #miss-sound; on: collidestart"  geometry="primitive:box; width:0.1; depth:0.1" material="color:#9c6644"></a-mixin>    
+            
+            <!--Ribbon that makes up controller hammer handle-->
+            <a-mixin id="hammer-ribbon" geometry="primitive:cylinder; openEnded:true; radius:0.032; height:0.02" material="color:black;side: double" ></a-mixin>
 
+            <!--Ribbon animation to show the flying-hammer's direction of movement-->
+            <a-mixin id="ribbon-shot-animation" animation="property:position; to:0 0 0; loop:true; dur:500"></a-mixin>
+            <a-mixin id="ribbon-recall-animation" animation="property:position; to:0 -0.14 0; loop:true; dur:500"></a-mixin> 
+          </a-assets>
         
-        <a-entity>
+        
+
+        <!--Mole Acre billboard and highscore post-->
+        <a-entity id="mole-acre-billboard">
           <a-entity mixin="billboard-leg" position="-1 0 -4"></a-entity>
           <a-entity mixin="billboard-leg" position="1 0 -4"></a-entity>
-          <a-box depth="0.1" height="1" width="3" position="0 1 -4">
+          <a-box sound="src: #miss-sound; on: collidestart" ammo-body="type:static; collisionFilterGroup: 1; collisionFilterMask: 5;" ammo-shape="type:box;"depth="0.1" height="1" width="3" position="0 1 -4">
             <a-entity scale="8 8 8" position="0 0.25  0.15" text="value: Mole Acre; align:center;"></a-entity>
             <a-entity id="highscore-text" scale="4 4 4" position="0 -0.25  0.15" text="value: Highscore: 0; align:center;"></a-entity>
           </a-box>
         </a-entity>
 
+        <!--Main game area-->
         <a-entity environment="preset: forest;" id='stage' mole-acre position="0 0 -2.2">
-          <a-entity control="gameDuration: short; popMultiple: true" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:1" class="clickable" position="0 0 0" material="color:#9c6644">
+          <a-entity control="gameDuration: short; popMultiple: true" id="control-entity" geometry="primitive:box; height:0.5; width:1; depth:1" class="clickable" position="0 0 0" material="color:#9c6644" ammo-body="type:kinematic; emitCollisionEvents:true;collisionFilterGroup: 1; collisionFilterMask: 5;" ammo-shape="type:box;" sound="src: #hit-sound; on: collidestart">
             <a-entity id ="control-score" scale="4 4 4"  rotation="-90 0 0" position="0 0.25 -0.25" text="value:; align:center;"></a-entity>
             <a-entity id ="control-instruction" scale="3.5 3.5 3.5"  rotation="-90 0 0" position="0 0.25 0.25" text="value: Hit to Play!; align:center;"></a-entity>
             <a-entity mixin="control-vertical-bar" position="0.475 0.25 0"></a-entity>
@@ -75,6 +87,35 @@
           </a-entity>
         </a-entity>
 
+        <!--Left controller with a hammer model, should be invisible unless the player has a headset and controllers-->
+        <a-entity id="left-hand" visible="false" vive-controls="hand: left; model:false" oculus-touch-controls="hand: left; model:false">
+          <a-entity id="left-hammer-handle" rotation="-90 0 0">
+            <a-entity mixin="hammer-ribbon" position="0 -0.08 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" position="0 -0.05 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" id="top-ribbon-left" position="0 -0.02 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" position="0 -0.11 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" id="bottom-ribbon-left" position="0 -0.14 0"></a-entity>
+          </a-entity>
+          <a-entity  ammo-body="type:kinematic;emitCollisionEvents:true" ammo-shape="type:box; fit:manual; halfExtents: 0.15 0.075 0.15" controller-hammer="flyingHammerID: left-flying-hammer; topRibbonID:top-ribbon-left; bottomRibbonID:bottom-ribbon-left" id="left-hammer" mixin="controller-hammer"></a-entity>   
+        </a-entity>
+        <a-entity visible="false" id="left-flying-hammer"  position="-1 0 0" flying-hammer="controlHammerID:left-hammer" mixin="flying-hammer"></a-entity> 
+
+        <!--Right controller with a hammer model, should be invisible unless the player has a headset and controllers-->
+        <a-entity id="right-hand" visible="false" vive-controls="hand: right; model:false" oculus-touch-controls="hand: right; model:false">
+          <a-entity id="right-hammer-handle" rotation="-90 0 0">
+            <a-entity mixin="hammer-ribbon" position="0 -0.08 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" position="0 -0.05 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" id="top-ribbon-right" position="0 -0.02 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" position="0 -0.11 0"></a-entity>
+            <a-entity mixin="hammer-ribbon" id="bottom-ribbon-right" position="0 -0.14 0"></a-entity>
+          </a-entity>
+          <a-entity  ammo-body="type:kinematic;emitCollisionEvents:true" ammo-shape="type:box; fit:manual; halfExtents: 0.15 0.075 0.15" controller-hammer="flyingHammerID: right-flying-hammer; topRibbonID:top-ribbon-right; bottomRibbonID:bottom-ribbon-right" id="right-hammer" mixin="controller-hammer"></a-entity> 
+        </a-entity>      
+        <a-entity visible="false" id="right-flying-hammer"  position="1 0 0" flying-hammer="controlHammerID:right-hammer" mixin="flying-hammer"></a-entity> 
+
+        <!--Camera to attach curso if the player is not using the above-->
+        <a-entity id="camera" camera position="0 1.6 0" wasd-controls look-controls="pointerLockEnabled:true"> 
+        </a-entity>
     </a-scene>
   </body>
 </html>

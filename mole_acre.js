@@ -12,11 +12,40 @@ AFRAME.registerComponent('control', {
         this.controlInstructions = document.getElementById("control-instruction");
         this.cursor = document.getElementById("cursor-entity");
         this.highscoreText = document.getElementById("highscore-text");
+        this.collidable= true;
 
         //dipslay a score of 0 at the start of the game
         this.score=0;
         this.setScore();
         this.displayHighscore();
+
+        this.event = undefined;
+        this.cursor = undefined;
+
+        if(AFRAME.utils.device.checkHeadsetConnected () && !AFRAME.utils.device.isGearVR () && !AFRAME.utils.device.isOculusGo () && !AFRAME.utils.device.isMobile ()){
+          this.event="collidestart"
+          document.getElementById("right-hammer").emit("enable");
+          document.getElementById("left-hammer").emit("enable");
+        }
+        else{
+          this.event="click"
+          this.cursor = document.createElement("a-entity");
+          this.cursor.setAttribute("position","0 0 -1")
+          this.cursor.setAttribute("hammer-logic","")
+          this.cursor.setAttribute("id","cursor-entity")
+          this.cursor.setAttribute("cursor","fuse: true; fuseTimeout: 500")
+          this.cursor.setAttribute("animation__click","property: rotation; startEvents: click; easing: easeInCubic; dur: 250; from: -45 0 0; to: 0 0 0")
+          this.cursor.setAttribute("animation__fusing","property: scale; startEvents: fusing; easing: easeInCubic; dur: 500; from: 0.1 0.1 0.1; to:0.15 0.15 0.15")
+          this.cursor.setAttribute("animation__mouseleave","property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 250; to: 0.1 0.1 0.1")
+          this.cursor.setAttribute("geometry","primitive: ring; radiusInner: 0.02; radiusOuter: 0.03")
+          this.cursor.setAttribute("material","color: black; shader: flat")
+          this.cursor.setAttribute("scale","0.1 0.1 0.1")
+          this.cursor.setAttribute("mixin","hammer")
+          this.cursor.setAttribute("raycaster","objects: .clickable")
+          this.cursor.setAttribute("sound","src: #hit-sound; on: click")
+          document.getElementById("camera").appendChild(this.cursor)
+        }
+
 
         //listen for event called when mole is hit
         this.el.addEventListener("addScore",()=>{
@@ -24,8 +53,10 @@ AFRAME.registerComponent('control', {
         this.setScore()
       })
 
-      //listen to when the controlbutton is clicked i.e to play or replay the game
-    this.el.addEventListener('click',()=>{
+      //listen to when the control button is clicked or collided with i.e to play or replay the game
+      this.el.addEventListener(this.event,()=>{
+        if(this.event=="click" || this.collidable){
+          console.log("inside")
         this.el.classList.remove("clickable");
         this.score=0;
         this.setScore();
@@ -40,10 +71,13 @@ AFRAME.registerComponent('control', {
             if(this.duration<=0){
                 this.stage.emit("timeup");
                 setTimeout(()=>this.allowRestart(this.el), 3500);
-                this.cursor.setAttribute("cursor", "fuse", "false");
+                if(this.event=="click"){
+                  this.cursor.setAttribute("cursor", "fuse", "false");
+                }
                 clearInterval(this.timer);
             }
         }, 1000)
+      }
       });
     },
 
@@ -79,11 +113,16 @@ AFRAME.registerComponent('control', {
         this.duration=this.durations[this.data.gameDuration];
         this.el.setAttribute("mixin","control-allowRestart-animation"); //initialse the control entity's animation back to it initial position
         this.el.addEventListener("animationcomplete",(e)=>{ //listen for when thee control entity has been animated back to it initial position
-            if(e.detail.name=="animation__restart"){
-                this.el.classList.add("clickable");      
-                this.controlInstructions.setAttribute("text","value", "Hit to Replay");
-                this.cursor.setAttribute("cursor", "fuse",  "true");
+          if(e.detail.name=="animation__restart"){
+            this.el.classList.add("clickable");      
+            this.controlInstructions.setAttribute("text","value", "Hit to Replay");
+            if(this.event=="click"){
+              this.cursor.setAttribute("cursor", "fuse", "true");
             }
+            else{
+              this.collidable = true
+            }
+        }
         });
     }
   });
@@ -179,7 +218,7 @@ AFRAME.registerComponent('control', {
   AFRAME.registerComponent('mole-logic', {
     init: function () {
       const PI = 3.14;
-      this.hitRotation = PI/12;
+      this.hitRotation = -PI/6;
       let el = this.el
       this.hit = false;
 
@@ -192,18 +231,34 @@ AFRAME.registerComponent('control', {
         this.hit=true;
       });
 
+      //listen for when mole is hit by hammer
+      el.addEventListener('collidestart',  (e)=> {
+        if(this.collidable){
+          document.getElementById("control-entity").emit("addScore")
+          el.setAttribute("mixin", "mole mole-animation")
+          this.el.setAttribute("ammo-body", "collisionFilterGroup: 30; collisionFilterMask: 20")//do not detect collision with hammer
+          el.object3D.rotation.x = this.hitRotation;
+          this.hit=true;
+          this.collidable=false;
+        }
+      });
+
       //listen for when mole is poped
       el.addEventListener('visible', (e)=>{
         el.setAttribute("mixin", "mole mole-animation")
         el.classList.add("clickable");
         el.object3D.rotation.x = 0;
+        this.collidable = true;
+        this.el.setAttribute("ammo-body", "collisionFilterGroup: 1; collisionFilterMask: 5") //detect collision with hammer
       });
 
       //listen for when mole completes its pop up animation
       el.addEventListener('animationcomplete', (e)=>{
         el.setAttribute("mixin", "mole")
         e.target.classList.remove("clickable")
+        this.collidable=false;
         document.getElementById('stage').emit('setAsWhackable', {'entity':e.target})
+        this.el.setAttribute("ammo-body", "collisionFilterGroup: 30; collisionFilterMask: 20")
       })
     }
   })
@@ -222,3 +277,162 @@ AFRAME.registerComponent('control', {
     }
     return array;
   }
+
+  AFRAME.registerComponent('controller-hammer', {
+    schema: { 
+      flyingHammerID:{type:"string", default:""},
+      topRibbonID:{type:"string", default:""},
+      bottomRibbonID:{type:"string", default:""}
+    },
+    init() {
+      //if the control component detects controllers
+      this.el.addEventListener("enable", ()=>{
+
+        //get the flying hammer for this controller and its handle ribbons
+        this.flyingHammer = document.getElementById(this.data.flyingHammerID);
+        this.topRibbon = document.getElementById(this.data.topRibbonID)
+        this.bottomRibbon = document.getElementById(this.data.bottomRibbonID)
+        this.el.parentElement.setAttribute("visible","true")
+        //counter for recalling hammer animations
+        this.animationCounter=0;
+        
+        this.states={'INHAND':'inhand', 'SHOT':'shot','RECALLED': 'recalled'}
+        this.hammerState=this.states.INHAND
+
+        //if the flying hammer is back in the players hand
+        this.el.addEventListener("hammerBack", ()=>{
+          this.el.emit("playHammerSound")
+          this.hammerState=this.states.INHAND
+          this.el.setAttribute("visible", "true")
+          this.el.setAttribute("ammo-body", "collisionFilterGroup: 4; collisionFilterMask: 7") //allow collisions with inhand hammer
+          this.topRibbon.setAttribute("mixin","hammer-ribbon") //stop ribbon animation
+          this.topRibbon.setAttribute("position", "0 -0.02 0")
+        })
+
+        //change ribbon animation if the flying hammer collides with an object and is reversed
+        this.flyingHammer.addEventListener("collidestart",(e)=>{
+          this.bottomRibbon.setAttribute("mixin","hammer-ribbon")
+          this.bottomRibbon.setAttribute("position", "0 -0.14 0")
+          this.topRibbon.setAttribute("mixin","hammer-ribbon ribbon-recall-animation")
+        })
+
+        //if the controller trigger is pressed
+        document.addEventListener("triggerdown", (e)=>{
+          if(e.srcElement==this.el.parentElement){
+          {
+            if(this.hammerState==this.states.SHOT){
+              this.flyingHammer.emit("recall")
+              this.hammerState=this.states.RECALLED
+              this.topRibbon.setAttribute("mixin","hammer-ribbon ribbon-recall-animation")
+              this.bottomRibbon.setAttribute("mixin","hammer-ribbon")
+              this.bottomRibbon.setAttribute("position", "0 -0.14 0")
+            }
+            else if(this.hammerState==this.states.INHAND){ //if the hammer is inhand create a flying hammer and hide controller hammer
+              let lastPosition=new THREE.Vector3( )
+              this.el.object3D.getWorldPosition(lastPosition);
+              const lastRotation = new THREE.Quaternion();
+              this.el.object3D.getWorldQuaternion(lastRotation);
+              this.el.setAttribute("visible", "false")
+              this.flyingHammer.setAttribute("position", ""+lastPosition.x+" "+lastPosition.y + " "+lastPosition.z)
+              this.flyingHammer.object3D.applyQuaternion(lastRotation)
+              this.flyingHammer.emit("shoot")
+              this.hammerState=this.states.SHOT
+              this.el.setAttribute("ammo-body", "collisionFilterGroup: 10; collisionFilterMask: 10")
+              this.bottomRibbon.setAttribute("mixin","hammer-ribbon ribbon-shot-animation")
+              this.el.emit("playHammerSound")
+            }
+          }
+        }
+      })
+    })},
+  });
+
+  AFRAME.registerComponent('flying-hammer', {
+    schema: { 
+      controlHammerID:{type:"string", default:""}
+    },
+
+    init() {
+      this.animationCounter=0;
+      this.origin=document.getElementById(this.data.controlHammerID)
+      this.speed=-0.015;
+      this.forward = true;
+
+      //when the flying hammer collides with an object, reverse it
+      this.el.addEventListener("collidestart",(e)=>{
+        let origin = this.createPositionData()
+        this.recallHammer(origin[0])
+        this.forward=false;
+        this.el.emit("recallHammer")
+      })
+
+      this.el.addEventListener("shoot",()=>{
+        this.el.setAttribute("visible", "true")
+        this.el.setAttribute("ammo-body", "collisionFilterGroup: 4; collisionFilterMask: 7")
+        this.forward=true;
+        this.el.setAttribute("ammo-body", "emitCollisionEvents", "true")
+        this.animationCounter =0;
+      })
+
+      this.el.addEventListener("recall", ()=>{
+        this.forward=false
+        this.el.setAttribute("ammo-body", "emitCollisionEvents", "false")
+        let origin = this.createPositionData()
+        this.recallHammer(origin[0])
+      })
+    },
+
+    //retun the position vector and string of the controller hammer
+    createPositionData(){
+      let lastPosition=new THREE.Vector3( )
+      this.origin.object3D.getWorldPosition(lastPosition);
+      pos = ""+lastPosition.x +" "+lastPosition.y+" "+lastPosition.z
+      return [pos, lastPosition]
+    },
+
+    calcDistance(){ //between controller hammer and flying hammer
+      let origin = this.createPositionData()
+      let x = this.el.object3D.position.x - origin[1].x;
+      let y = this.el.object3D.position.y - origin[1].y;
+      let z = this.el.object3D.position.z - origin[1].z;
+      return Math.sqrt(x*x + y*y + z*z);
+    },
+
+    setRecallAnimation(pos){
+      let durPerRation = 200;
+      let distance = this.calcDistance()
+      let ratio = distance/4;
+      let dur = ratio * durPerRation;
+      this.el.setAttribute('animation__recall'+this.animationCounter,`property:position; to:${pos}; dur: ${dur};`);
+    },
+
+    //recall flying hammer to controller hammer location (recursively if controller hammer moves before the recall animation ends)
+    recallHammer(pos){
+      this.setRecallAnimation(pos)
+      this.el.addEventListener('animationcomplete', (e)=>{
+        if(e.detail.name=='animation__recall'+this.animationCounter){
+          this.el.removeAttribute("animation__recall"+this.animationCounter)
+          let distance = this.calcDistance();
+          if(distance<0.1)
+          {
+            this.animationCounter=0;
+            this.forward=false
+            this.origin.emit("hammerBack");
+            this.el.setAttribute("ammo-body", "collisionFilterGroup: 10; collisionFilterMask: 10")
+            this.el.setAttribute("visible","false")
+            this.el.setAttribute("rotation","0 0 0")
+          }
+          else {
+            this.animationCounter+=1;
+            let origin = this.createPositionData()
+            this.recallHammer(origin[0])
+          }
+        }
+      })
+    },
+    tick(t, dt){
+      if(this.forward==true){
+        this.el.object3D.translateZ(this.speed*dt)
+      }
+    }
+  })
